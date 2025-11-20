@@ -1,15 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, ChevronRight, Star, Heart, BarChart3, BookOpen, Shield, Clock, CheckCircle2, Play } from 'lucide-react';
-import growellLogo from './assets/Growell (1).png';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, ChevronRight, Star, Heart, BarChart3, BookOpen, Shield, Clock, CheckCircle2, Play, User, LogOut, ChevronDown } from 'lucide-react';
+import growellLogo from '../assets/Growell (1).png';
+import { isAuthenticated, getUserData, clearAuth } from '../utils/auth';
 
 export default function GrowellLanding() {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [visibleSections, setVisibleSections] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
   
   const sectionRefs = useRef({});
 
   useEffect(() => {
+    // Check authentication status
+    const checkAuth = () => {
+      if (isAuthenticated()) {
+        setIsLoggedIn(true);
+        setUserData(getUserData());
+      }
+    };
+    checkAuth();
+
     // Handle page load
     const handleLoad = () => {
       // Minimum loading time untuk UX yang lebih baik
@@ -25,6 +41,37 @@ export default function GrowellLanding() {
       return () => window.removeEventListener('load', handleLoad);
     }
   }, []);
+
+  // Handle click outside for profile dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    }
+    if (profileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileDropdownOpen]);
+
+  const handleLogout = () => {
+    clearAuth();
+    setIsLoggedIn(false);
+    setUserData(null);
+    setProfileDropdownOpen(false);
+    navigate('/');
+  };
+
+  const handleProfile = () => {
+    setProfileDropdownOpen(false);
+    navigate('/profile');
+  };
+
+  const handleDashboard = () => {
+    setProfileDropdownOpen(false);
+    navigate('/kader');
+  };
 
   useEffect(() => {
     const observerOptions = {
@@ -108,9 +155,51 @@ export default function GrowellLanding() {
               <a href="#how" className="text-gray-600 hover:text-cyan-600 transition font-medium">Tentang</a>
               <a href="#testimonials" className="text-gray-600 hover:text-cyan-600 transition font-medium">Testimoni</a>
               <a href="#faq" className="text-gray-600 hover:text-cyan-600 transition font-medium">Bantuan</a>
-              <button className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition font-semibold">
-                Coba Gratis
-              </button>
+              {isLoggedIn ? (
+                <div className="relative" ref={profileDropdownRef}>
+                  <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition flex items-center gap-2 font-semibold"
+                  >
+                    <User size={18} />
+                    <span>{userData?.name || 'Profile'}</span>
+                    <ChevronDown
+                      className={`transition-transform duration-200 ${profileDropdownOpen ? 'transform rotate-180' : ''}`}
+                      size={16}
+                    />
+                  </button>
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <button
+                        onClick={handleDashboard}
+                        className="w-full px-4 py-3 text-left transition-all hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                      >
+                        <BarChart3 size={18} className="text-cyan-600" />
+                        <span className="font-medium">Dashboard</span>
+                      </button>
+                      <button
+                        onClick={handleProfile}
+                        className="w-full px-4 py-3 text-left transition-all hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                      >
+                        <User size={18} className="text-cyan-600" />
+                        <span className="font-medium">Profile</span>
+                      </button>
+                      <div className="border-t border-gray-200"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-3 text-left transition-all hover:bg-red-50 flex items-center gap-3 text-red-600"
+                      >
+                        <LogOut size={18} />
+                        <span className="font-medium">Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link to="/register" className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition font-semibold">
+                  Coba Gratis
+                </Link>
+              )}
             </div>
 
             <button 
@@ -130,9 +219,26 @@ export default function GrowellLanding() {
               <a href="#how" className="block text-gray-600 hover:text-cyan-600 font-medium">Tentang</a>
               <a href="#testimonials" className="block text-gray-600 hover:text-cyan-600 font-medium">Testimoni</a>
               <a href="#faq" className="block text-gray-600 hover:text-cyan-600 font-medium">Bantuan</a>
-              <button className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold">
-                Coba Gratis
-              </button>
+              {isLoggedIn ? (
+                <>
+                  <Link to="/kader" className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold text-center block">
+                    Dashboard
+                  </Link>
+                  <Link to="/profile" className="w-full px-6 py-3 border-2 border-cyan-500 text-cyan-600 rounded-xl font-semibold text-center block">
+                    Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-6 py-3 bg-red-500 text-white rounded-xl font-semibold text-center"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link to="/register" className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold text-center block">
+                  Coba Gratis
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -160,13 +266,13 @@ export default function GrowellLanding() {
                 Temani Setiap <span className="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 bg-clip-text text-transparent">Momen Tumbuh</span> Si Kecil
               </h1>
               <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
-                Pantau milestone, konsultasi ahli, dan dapatkan panduan personal untuk mendukung perkembangan optimal buah hati Anda
+                Pantau milestone dan dapatkan panduan personal untuk mendukung perkembangan optimal buah hati Anda
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <button className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:scale-105 flex items-center justify-center">
+                <Link to="/register" className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:scale-105 flex items-center justify-center">
                   Mulai Perjalanan
                   <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </Link>
                 <button className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-bold text-lg hover:border-cyan-500 hover:text-cyan-600 transition-all flex items-center justify-center gap-2">
                   <Play size={20} />
                   Lihat Demo
@@ -251,8 +357,8 @@ export default function GrowellLanding() {
               },
               {
                 icon: <Heart className="text-rose-600" size={36} />,
-                title: "Health Consultation",
-                desc: "Konsultasi 24/7 dengan dokter spesialis anak dan nutrisionis bersertifikat"
+                title: "Personalized Recommendation",
+                desc: "Dapatkan rekomendasi personal untuk mendukung perkembangan optimal anak Anda"
               },
               {
                 icon: <BookOpen className="text-indigo-600" size={36} />,
@@ -463,20 +569,20 @@ export default function GrowellLanding() {
           <div className="space-y-4 sm:space-y-6">
             {[
               { 
-                q: "Bagaimana keamanan data pribadi anak saya?", 
-                a: "Kami menggunakan enkripsi end-to-end dan mematuhi standar keamanan HIPAA. Data Anda tersimpan di server tersertifikasi ISO 27001 dan tidak akan dibagikan kepada pihak ketiga tanpa izin eksplisit."
+                q: "Bagaimana cara menggunakan Growell?", 
+                a: "Cara menggunakan Growell sangat mudah! Daftarkan akun Anda, lengkapi profil anak, lalu mulai catat milestone dan perkembangan si kecil. Platform akan memberikan rekomendasi personal berdasarkan data yang Anda input."
               },
               { 
-                q: "Apakah ada biaya berlangganan?", 
-                a: "Growell menawarkan paket gratis dengan fitur dasar dan paket Premium mulai Rp 149.000/bulan dengan akses penuh ke semua fitur termasuk konsultasi unlimited dengan dokter spesialis."
+                q: "Apakah data anak saya aman dan privasi terjaga?", 
+                a: "Ya, keamanan data adalah prioritas utama kami. Kami menggunakan enkripsi end-to-end dan mematuhi standar keamanan internasional. Data Anda tersimpan di server tersertifikasi dan tidak akan dibagikan kepada pihak ketiga tanpa izin eksplisit."
               },
               { 
-                q: "Bisakah saya berkonsultasi dengan dokter secara langsung?", 
-                a: "Tentu! Member Premium dapat melakukan video call consultation dengan dokter spesialis anak dan ahli gizi kapan saja. Respons pertanyaan dalam chat rata-rata 15 menit."
+                q: "Fitur apa saja yang tersedia di Growell?", 
+                a: "Growell menyediakan berbagai fitur seperti Growth Tracking untuk memantau tinggi, berat, dan lingkar kepala anak, Personalized Recommendation untuk saran perkembangan, Smart Learning untuk aktivitas edukatif, dan Vaccination Alert untuk pengingat imunisasi."
               },
               { 
-                q: "Apakah Growell tersedia di iOS dan Android?", 
-                a: "Ya, Growell tersedia di App Store dan Google Play Store. Anda juga dapat mengakses semua fitur melalui web browser di desktop atau tablet."
+                q: "Apakah Growell gratis untuk digunakan?", 
+                a: "Saat ini Growell masih dalam tahap pengembangan dan dapat digunakan secara gratis. Kami fokus untuk memberikan pengalaman terbaik dalam memantau tumbuh kembang anak Anda."
               }
             ].map((faq, idx) => (
               <div 
@@ -517,10 +623,10 @@ export default function GrowellLanding() {
             Bergabunglah dengan 25.000+ keluarga yang telah mempercayakan tumbuh kembang anak mereka pada Growell
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="group px-10 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-center">
+            <Link to="/register" className="group px-10 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-center">
               Daftar Gratis Sekarang
               <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </Link>
             <button className="px-10 py-4 border-2 border-white text-white rounded-xl font-bold text-lg hover:bg-white hover:text-blue-600 transition-all flex items-center justify-center gap-2">
               <Clock size={20} />
               Jadwalkan Demo
