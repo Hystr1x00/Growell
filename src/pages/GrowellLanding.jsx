@@ -5,7 +5,7 @@ import growellLogo from '../assets/Growell (1).png';
 import { isAuthenticated, getUserData, clearAuth } from '../utils/auth';
 
 export default function GrowellLanding() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [visibleSections, setVisibleSections] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
